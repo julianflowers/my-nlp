@@ -6,14 +6,75 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
 library(reticulate)
 py_install("pytorch")
-py_install("transformers")
+py_install("spacy-transformers", pip = TRUE)
+py_install("pandas")
 import("torch")
 library(tidyverse)
+py_install("spacy")
+py_install("scispacy", pip = TRUE)
+py_install("https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.4.0/en_core_sci_scibert-0.4.0.tar.gz", pip = TRUE)
+py_install("https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.4.0/en_ner_bionlp13cg_md-0.4.0.tar.gz", pip = TRUE)
+import("spacy")
+import("scispacy")
+import("en_core_sci_scibert")
 
 ```
+
+```{python}
+import spacy
+import scispacy
+import pandas as pd
+import spacy_transformers
+from spacy import displacy
+nlp = spacy.load("en_core_sci_scibert")
+nlp1 = spacy.load("en_ner_cbionlp13cg_md")
+
+```
+
+```{python}
+text = "Alterations in the hypocretin receptor 2 and preprohypocretin genes produce narcolepsy in some animals, butter bullfinch, octreotide."
+
+doc = nlp1(text)
+
+print(doc.ents  )
+```
+
+```{python}
+
+
+displacy.render(doc, jupyter = True, style = 'ent')
+
+```
+
+
+
+
+```{python}
+
+def createTable(nlp, document):
+  
+  doc = nlp(document)
+  values = {}
+  for x in doc.ents:
+    values[x.text] = x.label_
+    
+  return values  
+
+
+```
+
+```{python}
+
+createTable(nlp1, text)
+
+
+```
+
+
+
 
 ```{python}
 from transformers import AutoTokenizer, AutoModelWithLMHead
@@ -59,6 +120,9 @@ sequence = ("In May, Churchill was still generally unpopular with many Conservat
 
 
 ```
+
+
+
 ```{python}
 
 inputs = tokenizer.encode("summarize: " + sequence,
@@ -99,7 +163,9 @@ py$summary %>%
 
 
 py$sequence %>%
-  myScrapers::text_summariser(., n = 5)
+  myScrapers::text_summariser(., n = 5) %>%
+  as_tibble() %>%
+  gt::gt() 
 
 ```
 
